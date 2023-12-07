@@ -8,7 +8,6 @@
   <title>MappiKidia</title>
   <link rel="stylesheet" href="{% static 'css/base.css' %}">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
-    <script src="https://d3js.org/d3.v5.min.js"></script>
 </head>
 
 <body>
@@ -194,130 +193,12 @@
                     }
 
                     $("#result-text").html(textContent);
-                              $.ajax({
-                                   type: "POST",
-                                   url: "{% url 'wikimap:piechart_view' %}",
-                                   data: { 'city': city, 'csrfmiddlewaretoken': '{{ csrf_token }}' },
-                                   dataType: "json",
-                                   success: function (response) {
-                                      if (response.message) {
-                                        var populationExtentData = response.population_extent_data;
-                                        console.log('1')
-
-                                        // Your D3.js code to create a dynamic chart with populationExtentData
-                                        const width = 150;
-                                        const height = 150;
-
-                                       var textContent = '<div id="population-extent-chart-container" style="width: 100%; height: 50%; display: flex; justify-content: center; align-items: center;">'
-                                        $("#result-text").append(textContent);
-
-                                        const svg = d3.select("#population-extent-chart-container")
-                                        {#const svg = d3.select("#population-extent-chart")#}
-                                            .append("svg")
-                                            .attr("width", width)
-                                            .attr("height", height)
-                                            .append("g") // 그룹 요소 추가
-                                            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")"); // 중앙으로 이동
-
-
-                                        // Example: Create a pie chart with population data
-                                        const pie = d3.pie().value(d => d.population);
-                                        const color = d3.scaleOrdinal(d3.schemeCategory10);
-
-                                        const arcs = pie(populationExtentData);
-
-                                        const arc = d3.arc()
-                                            .innerRadius(0)
-                                            .outerRadius(Math.min(width, height) / 2 - 1);
-
-                                        function get_color(city_name){
-                                            if (city.includes(city_name)) {
-                                                return '#fff000'
-                                            }
-                                            else{
-                                                return '#000fff'
-                                            }
-                                        }
-                                        console.log(svg)
-                                        svg.selectAll("path")
-                                            .data(arcs)
-                                            .join("path")
-                                            {#.attr("fill", (d, i) => color(i))#}
-                                            .attr("fill", (d, i) => get_color(d.data.city))
-                                            .attr("d", arc)
-                                            .append("title")
-                                            .text(d => `${d.data.city}: ${d.data.population}`);
-
-                                            // 그래프명 추가
-svg.append("text")
-    .attr("text-anchor", "middle")
-    .attr("dy", "2em")
-    .text("인구 비율");
-
-                                        {#  var textContent = '<div id="extent-chart-container" style="width: 100%; height: 50%; display: flex; justify-content: center; align-items: center;">' +#}
-                                        {#      '<div id="extent-chart" style="width: 300px; height: 300px; margin: 0 auto;"></div>' +#}
-                                        {#      '</div>\n';#}
-                                        {#$("#result-text").append(textContent);#}
-                                        console.log('2')
-
-                                        const svg2 = d3.select("#population-extent-chart-container")
-                                        {#const svg2 = d3.select("#extent-chart")#}
-                                            .append("svg")
-                                            .attr("width", width)
-                                            .attr("height", height)
-                                            .style("margin-left", "60px")
-                                            .append("g") // 그룹 요소 추가
-                                            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")"); // 중앙으로 이동
-
-
-                                        // Example: Create a pie chart with population data
-                                        const pie2 = d3.pie().value(d => d.extent);
-                                        const color2 = d3.scaleOrdinal(d3.schemeCategory10);
-
-                                        const arcs2 = pie2(populationExtentData);
-
-                                        const arc2 = d3.arc()
-                                            .innerRadius(0)
-                                            .outerRadius(Math.min(width, height) / 2 - 1);
-
-                                        function get_color(city_name){
-                                            if (city.includes(city_name)) {
-                                                return '#fff000'
-                                            }
-                                            else{
-                                                return '#000fff'
-                                            }
-                                        }
-
-                                        svg2.selectAll("path")
-                                            .data(arcs2)
-                                            .join("path")
-                                            {#.attr("fill", (d, i) => color2(i))#}
-                                            .attr("fill", (d, i) => get_color(d.data.city))
-                                            .attr("d", arc2)
-                                            .append("title")
-                                            .text(d => `${d.data.city}: ${d.data.extent}`);
-
-
-// 그래프명 추가
-svg2.append("text")
-    .attr("text-anchor", "middle")
-    .attr("dy", "2em")
-    .text("면적 비율");
-                                      }
-                                   },
-                                   error: function (request, status, error) {
-                                      alert("ERROR");
-                                   },
-                                });
                   }
                },
                error: function (request, status, error) {
-                  alert("ERROR");
+                  alert("댓글 내용을 작성하세요.");
                },
             });
-
-
          }
       });
    });
