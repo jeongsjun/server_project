@@ -1,0 +1,227 @@
+<!-- wikimap/result.html -->
+<!--<!DOCTYPE html>-->
+<!--<html>-->
+<!--<head>-->
+<!--    <title>1팀</title>-->
+<!--</head>-->
+<!--<body>-->
+<!--    <h1>1팀</h1>-->
+<!--    <form action="{% url 'wikimap:wikipedia_city_info' %}" method="post">-->
+<!--        {% csrf_token %}-->
+<!--        &lt;!&ndash; 텍스트 입력 필드 추가 &ndash;&gt;-->
+<!--        <label for="city_input">City:</label>-->
+<!--        <input type="text" id="city_input" name="city_name">-->
+<!--        <button type="submit">Get Wikipedia Info</button>-->
+<!--    </form>-->
+<!--</body>-->
+<!--</html>-->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wikipedia City Info</title>
+  <style>
+    #search-box {
+      width: 40%;
+      height: 20px;
+      font-size: 1.5em;
+      padding: 8px;
+      border-radius: 60px;
+      margin-top: 10px;
+      box-shadow: 2px 0px 4px 0px rgba(0, 0, 0, 0.3);
+    }
+    #map-container {
+      display: flex;
+    }
+    #map {
+      width: 100%;
+      height: 100vh;
+    }
+    #wiki-iframe {
+      width: 0;
+      height: 100%;
+      border: none;
+      transition: width 0.3s ease-in-out;
+      overflow: hidden;
+    }
+    #toggle-button {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      width: 30px;
+      height: 30px;
+      background-color: #686868;
+      color: #fff;
+      border: none;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.3s ease-in-out;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: "Material Symbols Outlined";
+      font-size: 18px;
+      box-shadow: 2px 0px 4px 0px rgba(0, 0, 0, 0.3);
+    }
+    #toggle-button:hover {
+      background-color: #0056b3;
+    }
+    #toggle-button.open {
+      transform: translateX(0);
+    }
+    .material-symbols-outlined {
+      font-variation-settings:
+      'FILL' 0,
+      'wght' 400,
+      'GRAD' 0,
+      'opsz' 24;
+    }
+  </style>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+</head>
+
+<body>
+
+  <h1>City Information</h1>
+
+  {% for city_info in city_info_list %}
+    <h2>{{ city_info.title }}</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Section</th>
+          <th>Content</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for section, content in city_info.sections.items %}
+          <tr>
+            <td>{{ section }}</td>
+            <td>{{ content|safe }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p>URL: <a href="{{ city_info.url }}" target="_blank">{{ city_info.url }}</a></p>
+  {% endfor %}
+  <div id="map-container">
+    <div id="map"></div>
+    <iframe id="wiki-iframe" src="https://www.example.com" frameborder="0"></iframe>
+    <button id="toggle-button" class="material-symbols-outlined">&#xe9bd;</button>
+  </div>
+</body>
+
+</html>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVtcIioaXdif7DOH9VW_hez7VlX43zwu0&libraries=places&callback=initMap&region=kr"></script>
+<script>
+    var markers = [];
+    var wikiOpen = false;
+
+    function loadWikipedia() {
+      var wikiIframe = document.getElementById('wiki-iframe');
+      wikiIframe.src = 'https://ko.wikipedia.org/wiki/%EC%84%9C%EC%9A%B8%ED%8A%B9%EB%B3%84%EC%8B%9C';
+    }
+
+    function initMap() {
+      var center = { lat: 35.7 ,lng: 127.865249 };
+      var map = new google.maps.Map(
+        document.getElementById('map'), {
+          zoom: 7.5,
+          center: center
+        });
+
+      // 위치 정보
+      var locations = [
+      ];
+
+      // 검색창 추가
+      var searchBox = new google.maps.places.SearchBox("{{ city_info.title }}");
+      map.controls[google.maps.ControlPosition.TOP_CENTER].push("{{ city_info.title }}");
+
+      // 검색 결과 핸들링
+      map.addListener('bounds_changed', function() {
+        searchBox.setBounds(map.getBounds());
+      });
+
+      searchBox.addListener('places_changed', function() {
+        var places = searchBox.getPlaces();
+
+        if (places.length == 0) {
+          return;
+        }
+
+        // 기존 마커 숨기기
+        markers.forEach(function(marker) {
+          marker.setMap(null);
+        });
+        markers = [];
+
+        var bounds = new google.maps.LatLngBounds();
+        places.forEach(function(place) {
+          if (!place.geometry) {
+            console.log("Returned place contains no geometry");
+            return;
+          }
+          if (place.geometry.viewport) {
+            bounds.union(place.geometry.viewport);
+          } else {
+            bounds.extend(place.geometry.location);
+          }
+          // 마커 표시
+          markers.push(new google.maps.Marker({
+            map: map,
+            position: place.geometry.location
+          }));
+        });
+        map.fitBounds(bounds);
+
+        // 위키피디아 로딩
+        loadWikipedia();
+      });
+
+      // 마우스 클릭 이벤트 핸들링
+      map.addListener('click', function(event) {
+        placeMarkerAndRemoveOthers(event.latLng);
+        document.getElementById('search-box').value = event.latLng.toString();
+      });
+
+      function placeMarkerAndRemoveOthers(location) {
+        // 기존 마커 삭제
+        for(var i = 0; i < markers.length; i++){
+          markers[i].setMap(null);
+        }
+        markers = [];
+
+        // 새로운 마커 생성
+        markers.push(new google.maps.Marker({
+          position: location,
+          map: map
+        }));
+      }
+
+      // 각 위치에 마커를 추가
+      for (var i = 0; i < locations.length; i++){
+        markers.push(new google.maps.Marker({
+          position: locations[i],
+          map: map
+        }));
+      }
+    }
+
+    // 토글 버튼 클릭 시 위키피디아 패널 열기/닫기
+    var toggleButton = document.getElementById('toggle-button');
+    toggleButton.addEventListener('click', function() {
+      var wikiPanel = document.getElementById('wiki-iframe');
+      if (wikiOpen) {
+        wikiPanel.style.width = '0';
+        toggleButton.classList.remove('open');
+      } else {
+        wikiPanel.style.width = '30%';
+        toggleButton.classList.add('open');
+      }
+      wikiOpen = !wikiOpen;
+    });
+  </script>

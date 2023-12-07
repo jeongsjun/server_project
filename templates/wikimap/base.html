@@ -1,0 +1,334 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+
+<head>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <meta charset="utf-8">
+  <title>MappiKidia</title>
+  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+
+<body>
+  <meta http-equiv="Content-Type" content="text/html" charset="utf-8">
+
+  <input id="search-box" type="text" placeholder="🔎 Google 지도 검색" name="search-box">
+  <div id="map-container">
+
+
+<div id="mappikipedia">MappiKidia
+  <div id="user-buttons">
+    <button id="login-button">로그인</button>
+    <button id="signup-button">회원가입</button>
+  </div>
+</div>
+    <div id="map"></div>
+    <button id="toggle-button" class="material-symbols-outlined">&#xe9bd;</button>
+
+<div id="result-text"></div>
+
+
+</div>
+
+ <script async defer
+    src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDVtcIioaXdif7DOH9VW_hez7VlX43zwu0&libraries=places&callback=initMap&region=kr"></script>
+<script>
+
+
+    var markers = [];
+    var wikiOpen = false;
+    var searchDone = false;
+
+    function loadWikipedia() {
+      var wikiPanel = document.getElementById('result-text');
+      wikiPanel.style.width = '30%'; // 검색 이후에는 항상 30%로 열리도록
+      wikiPanel.style.padding = '20px'; // padding을 20으로 설정
+      wikiPanel.style.display = 'block'; // 항상 보이도록 설정
+      wikiPanel.style.overflow = 'auto'; // 스크롤이 가능하도록 설정
+    }
+
+    function initMap() {
+      var center = { lat: 35.7, lng: 127.865249 };
+      var map = new google.maps.Map(
+        document.getElementById('map'), {
+          zoom: 7.5,
+          center: center,
+          draggable: false
+        });
+
+      var locations = [];
+
+      var searchBox = new google.maps.places.SearchBox(document.getElementById('search-box'));
+      map.controls[google.maps.ControlPosition.TOP_CENTER].push(document.getElementById('search-box'));
+
+      map.addListener('bounds_changed', function () {
+        searchBox.setBounds(map.getBounds());
+      });
+
+      searchBox.addListener('places_changed', function () {
+      var places = searchBox.getPlaces();
+
+      if (places.length == 0) {
+        return;
+      }
+
+      markers.forEach(function (marker) {
+        marker.setMap(null);
+      });
+      markers = [];
+
+      var bounds = new google.maps.LatLngBounds();
+      places.forEach(function (place) {
+        if (!place.geometry) {
+          console.log("Returned place contains no geometry");
+          return;
+        }
+        if (place.geometry.viewport) {
+          bounds.union(place.geometry.viewport);
+        } else {
+          bounds.extend(place.geometry.location);
+        }
+        markers.push(new google.maps.Marker({
+          map: map,
+          position: place.geometry.location
+        }));
+      });
+      map.fitBounds(bounds);
+
+      loadWikipedia();
+
+      document.getElementById('search-box').style.marginTop = '30px';
+
+      searchDone = true;
+      map.setOptions({ draggable: true });
+    });
+
+
+      map.addListener('click', function (event) {
+        if (!searchDone) {
+          return;
+        }
+        placeMarkerAndRemoveOthers(event.latLng);
+
+        var geocoder = new google.maps.Geocoder();
+        geocoder.geocode({ 'location': event.latLng }, function (results, status) {
+          if (status === 'OK') {
+            if (results[0]) {
+              document.getElementById('search-box').value = results[0].formatted_address;
+            } else {
+              window.alert('No results found');
+            }
+          } else {
+            window.alert('Geocoder failed due to: ' + status);
+          }
+        });
+      });
+
+      function placeMarkerAndRemoveOthers(location) {
+        for (var i = 0; i < markers.length; i++) {
+          markers[i].setMap(null);
+        }
+        markers = [];
+
+        markers.push(new google.maps.Marker({
+          position: location,
+          map: map
+        }));
+      }
+
+      for (var i = 0; i < locations.length; i++) {
+        markers.push(new google.maps.Marker({
+          position: locations[i],
+          map: map
+        }));
+      }
+    }
+
+    var toggleButton = document.getElementById('toggle-button');
+    toggleButton.addEventListener('click', function () {
+      var wikiPanel = document.getElementById('result-text');
+      if (searchDone) {
+        if (wikiOpen) {
+          wikiPanel.style.width = '0%';
+          wikiPanel.style.paddingLeft = '0px';
+          wikiPanel.style.display = 'none';
+          toggleButton.classList.remove('open');
+        } else {
+          wikiPanel.style.width = '30%';
+          wikiPanel.style.paddingLeft = '-10px';
+          wikiPanel.style.display = 'block';
+          toggleButton.classList.add('open');
+        }
+        wikiOpen = !wikiOpen;
+      }
+    });
+  </script>
+</body>
+
+</html>
+
+<script type="text/javascript">
+   $(document).ready(function () {
+      $("#search-box").on("keypress", function (e) {
+         if (e.which === 13) {
+            e.preventDefault();
+            var city = $(this).val();
+            $.ajax({
+               type: "POST",
+               url: "{% url 'wikimap:wiki_result' %}",
+               data: { 'city': city, 'csrfmiddlewaretoken': '{{ csrf_token }}' },
+               dataType: "json",
+               success: function (response) {
+                  if (response.message) {
+                    var cityInfoList = response.city_info_list;
+                    var textContent = '';
+
+                    for (var i = 0; i < cityInfoList.length; i++) {
+                      var cityInfo = cityInfoList[i];
+
+                      textContent += '<h2>' + cityInfo.title + '</h2>\n';
+                      textContent += '<p><strong>도시정보:</strong> ' + cityInfo.summary + '</p>\n';
+                      textContent += '<p><strong>URL:</strong> <a href="' + cityInfo.url + '">' + cityInfo.url + '</a></p>\n\n';
+                    }
+
+                    $("#result-text").html(textContent);
+                              $.ajax({
+                                   type: "POST",
+                                   url: "{% url 'wikimap:piechart_view' %}",
+                                   data: { 'city': city, 'csrfmiddlewaretoken': '{{ csrf_token }}' },
+                                   dataType: "json",
+                                   success: function (response) {
+                                      if (response.message) {
+                                        var populationExtentData = response.population_extent_data;
+                                        console.log('1')
+
+                                        // Your D3.js code to create a dynamic chart with populationExtentData
+                                        const width = 150;
+                                        const height = 150;
+
+                                       var textContent = '<div id="population-extent-chart-container" style="width: 100%; height: 50%; display: flex; justify-content: center; align-items: center;">'
+                                        $("#result-text").append(textContent);
+
+                                        const svg = d3.select("#population-extent-chart-container")
+                                        {#const svg = d3.select("#population-extent-chart")#}
+                                            .append("svg")
+                                            .attr("width", width)
+                                            .attr("height", height)
+                                            .append("g") // 그룹 요소 추가
+                                            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")"); // 중앙으로 이동
+
+
+                                        // Example: Create a pie chart with population data
+                                        const pie = d3.pie().value(d => d.population);
+                                        const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+                                        const arcs = pie(populationExtentData);
+
+                                        const arc = d3.arc()
+                                            .innerRadius(0)
+                                            .outerRadius(Math.min(width, height) / 2 - 1);
+
+                                        function get_color(city_name){
+                                            if (city.includes(city_name)) {
+                                                return '#fff000'
+                                            }
+                                            else{
+                                                return '#000fff'
+                                            }
+                                        }
+                                        console.log(svg)
+                                        svg.selectAll("path")
+                                            .data(arcs)
+                                            .join("path")
+                                            {#.attr("fill", (d, i) => color(i))#}
+                                            .attr("fill", (d, i) => get_color(d.data.city))
+                                            .attr("d", arc)
+                                            .append("title")
+                                            .text(d => `${d.data.city}: ${d.data.population}`);
+
+                                            // 그래프명 추가
+svg.append("text")
+    .attr("text-anchor", "middle")
+    .attr("dy", "2em")
+    .text("인구 비율");
+
+                                        {#  var textContent = '<div id="extent-chart-container" style="width: 100%; height: 50%; display: flex; justify-content: center; align-items: center;">' +#}
+                                        {#      '<div id="extent-chart" style="width: 300px; height: 300px; margin: 0 auto;"></div>' +#}
+                                        {#      '</div>\n';#}
+                                        {#$("#result-text").append(textContent);#}
+                                        console.log('2')
+
+                                        const svg2 = d3.select("#population-extent-chart-container")
+                                        {#const svg2 = d3.select("#extent-chart")#}
+                                            .append("svg")
+                                            .attr("width", width)
+                                            .attr("height", height)
+                                            .style("margin-left", "60px")
+                                            .append("g") // 그룹 요소 추가
+                                            .attr("transform", "translate(" + width / 2 + "," + height / 2 + ")"); // 중앙으로 이동
+
+
+                                        // Example: Create a pie chart with population data
+                                        const pie2 = d3.pie().value(d => d.extent);
+                                        const color2 = d3.scaleOrdinal(d3.schemeCategory10);
+
+                                        const arcs2 = pie2(populationExtentData);
+
+                                        const arc2 = d3.arc()
+                                            .innerRadius(0)
+                                            .outerRadius(Math.min(width, height) / 2 - 1);
+
+                                        function get_color(city_name){
+                                            if (city.includes(city_name)) {
+                                                return '#fff000'
+                                            }
+                                            else{
+                                                return '#000fff'
+                                            }
+                                        }
+
+                                        svg2.selectAll("path")
+                                            .data(arcs2)
+                                            .join("path")
+                                            {#.attr("fill", (d, i) => color2(i))#}
+                                            .attr("fill", (d, i) => get_color(d.data.city))
+                                            .attr("d", arc2)
+                                            .append("title")
+                                            .text(d => `${d.data.city}: ${d.data.extent}`);
+
+
+// 그래프명 추가
+svg2.append("text")
+    .attr("text-anchor", "middle")
+    .attr("dy", "2em")
+    .text("면적 비율");
+                                      }
+                                   },
+                                   error: function (request, status, error) {
+                                      alert("ERROR");
+                                   },
+                                });
+                  }
+               },
+               error: function (request, status, error) {
+                  alert("ERROR");
+               },
+            });
+
+
+         }
+      });
+   });
+
+   $(document).ready(function () {
+    $("#login-button").on("click", function () {
+      window.location.href = "/login/";
+    });
+
+    $("#signup-button").on("click", function () {
+      window.location.href = "/signup/";
+    });
+ });
+</script>
