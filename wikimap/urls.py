@@ -1,5 +1,6 @@
 from django.urls import path
 from .views import *
+from django.views.generic.base import RedirectView
 #from . import views
 
 app_name='wikimap'#무조건 있어야 식별 가능
@@ -15,4 +16,5 @@ urlpatterns = [
     path('piechart/', piechart, name='piechart_view'),
     path('chart/', chart, name='chart'),
     path('home_page/', home_page, name='home_page'),
+    path('favicon.ico', RedirectView.as_view(url='/static/images/favicon.ico')),
 ]
