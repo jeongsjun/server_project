@@ -59,7 +59,7 @@
                 success: function (response) {
                     if (response.success) {
                         alert("로그인 성공");
-                        window.location.href = "{% url 'wikimap:wiki_home' %}";
+                        window.location.href = "{% url 'wikimap:home_page' %}";
                     } else {
                         alert("로그인 실패: " + response.message);
                     }

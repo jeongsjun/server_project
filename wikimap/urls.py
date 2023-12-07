@@ -14,4 +14,5 @@ urlpatterns = [
     path('signup/', signup, name='signup'),
     path('piechart/', piechart, name='piechart_view'),
     path('chart/', chart, name='chart'),
+    path('home_page/', home_page, name='home_page'),
 ]

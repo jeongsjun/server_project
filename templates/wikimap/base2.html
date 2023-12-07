@@ -6,7 +6,7 @@
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <meta charset="utf-8">
   <title>MappiKidia</title>
-  <link rel="stylesheet" href="{% static 'css/base.css' %}">
+  <link rel="stylesheet" href="{% static 'css/base2.css' %}">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
     <script src="https://d3js.org/d3.v5.min.js"></script>
 </head>
@@ -14,22 +14,17 @@
 <body>
   <meta http-equiv="Content-Type" content="text/html" charset="utf-8">
 
-  <input id="search-box" type="text" placeholder="🔎 로그인 후 이용 부탁드립니다!!" name="search-box">
+  <input id="search-box" type="text" placeholder="🔎 키워드, 시, 구, 군, 읍으로 검색해주세요!" name="search-box">
+  
   <div id="map-container">
-
-
-<div id="mappikipedia">MappiKidia
-  <div id="user-buttons">
-    <button id="login-button">로그인</button>
-    <button id="signup-button">회원가입</button>
-  </div>
-</div>
+    <div id="user-buttons">
+        <button id="logout-button">로그아웃</button>
+      </div>
+    <div id="welcome-message">환영합니다</div>
+<div id="mappikipedia">MappiKidia</div>
     <div id="map"></div>
     <button id="toggle-button" class="material-symbols-outlined">&#xe9bd;</button>
-
 <div id="result-text"></div>
-
-
 </div>
 
  <script async defer
@@ -253,7 +248,7 @@ svg.append("text")
     .attr("text-anchor", "middle")
     .attr("dy", "2em")
     .text("인구 비율");
-
+                                          
                                         {#  var textContent = '<div id="extent-chart-container" style="width: 100%; height: 50%; display: flex; justify-content: center; align-items: center;">' +#}
                                         {#      '<div id="extent-chart" style="width: 300px; height: 300px; margin: 0 auto;"></div>' +#}
                                         {#      '</div>\n';#}
@@ -282,10 +277,10 @@ svg.append("text")
 
                                         function get_color(city_name){
                                             if (city.includes(city_name)) {
-                                                return '#fff000'
+                                                return '#008080'
                                             }
                                             else{
-                                                return '#000fff'
+                                                return '#fff000'
                                             }
                                         }
 
@@ -323,8 +318,8 @@ svg2.append("text")
    });
 
    $(document).ready(function () {
-    $("#login-button").on("click", function () {
-      window.location.href = "/login/";
+    $("#logout-button").on("click", function () {
+      window.location.href = "/";
     });
 
     $("#signup-button").on("click", function () {

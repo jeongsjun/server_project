@@ -17,6 +17,9 @@ import os
 def wiki_home(request):
     return render(request, 'wikimap/base.html')
 
+def home_page(request):
+    return render(request, 'wikimap/base2.html')
+
 def wiki_index(request):
     return render(request, 'wikimap/index.html')
 
