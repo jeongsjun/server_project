@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Population and Extent Chart</title>
+    <!-- Use D3.js CDN -->
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+</head>
+<body>
+    <h1>Dynamic Population and Extent Chart</h1>
+
+    <!-- Population and Extent Chart -->
+    <div id="population-extent-chart" style="width: 600px; height: 300px;"></div>
+
+    <script>
+        // Fetch population and extent data from Django view
+        {#fetch('/get_population_extent_data/')#}
+        fetch('/wikimap/piechart')
+            .then(response => response.json())
+            .then(data => {
+                // Process data and create dynamic chart using D3.js
+                const populationExtentData = data.population_extent_data;
+
+                // Your D3.js code to create a dynamic chart with populationExtentData
+                const width = 600;
+                const height = 300;
+
+                const svg = d3.select("#population-extent-chart")
+                    .append("svg")
+                    .attr("width", width)
+                    .attr("height", height);
+
+                // Example: Create a pie chart with population data
+                const pie = d3.pie().value(d => d.population);
+                const color = d3.scaleOrdinal(d3.schemeCategory10);
+
+                const arcs = pie(populationExtentData);
+
+                const arc = d3.arc()
+                    .innerRadius(0)
+                    .outerRadius(Math.min(width, height) / 2 - 1);
+
+                svg.selectAll("path")
+                    .data(arcs)
+                    .join("path")
+                    .attr("fill", (d, i) => color(i))
+                    .attr("d", arc)
+                    .append("title")
+                    .text(d => `${d.data.city}: ${d.data.population}`);
+
+            })
+            .catch(error => console.error('Error fetching population and extent data:', error));
+    </script>
+</body>
+</html>

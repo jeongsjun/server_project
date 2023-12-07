@@ -3,8 +3,10 @@ from django.db import models
 class CityInfo(models.Model):
     name = models.CharField(max_length=100)
     population = models.IntegerField()
-    area = models.FloatField()
-    # Add more fields as needed for your application
+    extent = models.FloatField()
+
+def __str__(self):
+    return self.name
 
 class User_Table(models.Model):
     name = models.CharField(max_length=100, primary_key=True)
